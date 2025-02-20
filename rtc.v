@@ -1,68 +1,84 @@
-// top level module for a real time clock
+// main module for real time clock on FPGA
 
-module time_counter (input clk_125MHz,rst,start,stop, output reg [1:0] min_counter,output reg clk_1Hz,done,output reg [7:0] count,output reg [26:0] counter);
+module clock_Expt(clk,sec,min,done,rst, start, stop,count,sec_counter);
 
-//  reg [7:0] count;
-//  reg [26:0] counter;
-   
-    always @(posedge clk_125MHz) begin
-   
-    if (start && !stop) begin
-        if (rst) begin
-            // Reset the counter and output clock
-            counter <= 0;
-            clk_1Hz <= 0;
-            min_counter <= 2'd0;
-            done <= 0;
+    input clk;
+    input rst, stop, start;
+    output reg sec, done = 0;
+    output reg [1:0] min = 0;
+    output reg [26:0] count = 0;
+    output reg [5:0] sec_counter = 0;
+
+        always @(posedge clk)
+        begin
+        
+        if (start & !stop) begin 
+            if (!rst) begin
             
-        end else begin
-            // Increment the counter
-            if (counter == 27'd6250) begin
-                // Toggle the 1 Hz clock and reset the counter
-                clk_1Hz <= ~clk_1Hz;
-                //flag = 1'b1;
-                counter <= 0;
-            end else begin
-                counter <= counter + 1;
+                if (count==27'd6250) begin
                 
-            end
-        end
-      end
-    
-    end
- 
-    always @(negedge clk_1Hz) begin
-    
-        if (rst) begin
-            count <= 0;
-            done <= 0;
-        end else begin
+                     sec <= ~sec;
+                     count <= 0;
+                
+                end else begin
+                
+                     count <= count + 1;  
+                
+                end
             
-            if (count == 8'b10110100) begin
+            end else begin
+            
                 count <= 0;
-            end else begin
-                
-                count <= count + 1;
+                sec <= 0;
+                done <= 0;
+                min <= 0;
+        
             end
+            
+         end else begin
+         
+                count <= count;      
+                
+         end
+        
+        
         end
-    end
-    
-    
-    always @(negedge clk_1Hz) begin
-    
-        if(count == 8'd180) begin
         
-           // min_counter <= 0;
-            done <= 1'b1;
         
-        end else if (count == 8'd59 || count == 8'd119 || count == 8'd179) begin
+        always @(posedge sec)
         
-            min_counter <= min_counter + 1;
-        end
-    
-    end
-    
-    
+            begin
+            
+            if (!done) begin
+            
+                if (sec_counter==6'd60) begin
+            
+            
+                    if (min == 2'd3) begin
+                    
+                        min <= 0;
+                        done <= 1;
+                        
+                        end else begin
+            
+                           min <= min + 1;
+                
+                         end
+                         
+                    sec_counter <= 0;
+            
+                 end else begin
+                
+                    sec_counter <= sec_counter + 1;
+                
+            
+                    end      
+                end else begin
+                    
+                    count <= count;
+                
+                end
+                
+            end
    
-  
-endmodule    
+endmodule
